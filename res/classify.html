@@ -1,0 +1,81 @@
+<html>
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<title>GMaps Testing</title>
+	<script src="js/shared.js"></script>
+	<script src="js/classify.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+</head>
+<body>
+	<nav class="navbar navbar-expand-lg navbar-light bg-light">
+		<a class="navbar-brand" href="#">Cool name</a>
+		<div class="collapse navbar-collapse" id="navbarNav">
+			<ul class="navbar-nav">
+				<li class="nav-item">
+					<a class="nav-link active" href="#">Classify some images</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="/help">How to classify images</a>
+				</li>
+			</ul>
+		</div>
+		<span class="navbar-text">
+			<button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="username">Username</button>
+			<div class="dropdown-menu dropdown-menu-right">
+				<a class="dropdown-item" href="/password">Change password</a>
+				<a class="dropdown-item" href="/me">My classifications</a>
+				<div class="dropdown-divider"></div>
+				<a class="dropdown-item" href="/logout">Sign out</a>
+			</div>
+		</span>
+	</nav>
+
+	<div class="d-flex justify-content-center">
+		<p>Position and zoom the image correctly, tag it, and then press submit.</p>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<input type="button" value ="↑" class="classifybutton btn btn-info" onclick="nudgeUp()">
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<input type="button" value="←" class="btn btn-info" onclick="nudgeLeft()">
+		<img id="image1"/><br>
+		<input type="button" value ="→" class="btn btn-info" onclick="nudgeRight()">
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<input type="button" value="+" class="classifybutton3 btn btn-info" onclick="zoomIn()">
+		<input type="button" value = "↓" class="classifybutton2 btn btn-info" onclick="nudgeDown()">
+		<input type="button" value="-" class="classifybutton3 btn btn-info" onclick="zoomOut()"><br>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<p id="lotvscore">LoTV Score: 0</p>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<div id="tagHolder">
+			<div id="defaultTags" class="form-check"></div>
+			<div id="moreTags"></div>
+		</div>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<select id="extraTags">
+			<option value="ignore">More tags...</option>
+		</select>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<input type="button" value="Poor image quality" class="btn btn-danger" onclick="nextImage(true)"></br>
+		<input type="button" value="Submit" class="btn btn-success" style="width: 150" onclick="nextImage()"></br>
+	</div>
+
+	<div id="streetDummy" style="height: 0; width: 0"></div>
+</body>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAOJ_dBd5UOR29NAmOjRiK8D0SMC6nPGE8&callback=getPic" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</html>

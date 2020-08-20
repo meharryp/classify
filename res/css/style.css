@@ -1,0 +1,23 @@
+#image1 {
+	 width: 450;
+}
+
+.classifybutton {
+	width: 450;
+}
+
+.classifybutton2 {
+	width: 250;
+}
+
+.classifybutton3 {
+	width: 100;
+}
+
+#tagHolder * {
+	max-width: 460;
+}
+
+.defaultTags {
+	padding: 20px;
+}

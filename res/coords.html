@@ -1,0 +1,25 @@
+<html>
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<title>GMaps Testing</title>
+	<script src="js/loaddata.js"></script>
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+</head>
+<body>
+	<form id="coordsForm" action="javascript:getPic()">
+		Lat: <input type="text" name="lat" id="latInput" value="53.2603968142884"><br>
+		Long: <input type="text" name="long" id="longInput" value="-0.212982756231167"><br>
+		Lat2: <input type="text" name="lat" id="latInput1" value="53.2656974420586"><br>
+		Long2: <input type="text" name="long" id="longInput1" value="-0.206763872137379"><br>
+		<input type="button" onclick="getPic()" value="Submit">
+	</form>
+	<div id="streetDummy" style="height: 0; width: 0"></div>
+	<p id="output">Waiting for coords...</p>
+	<img id="image1"/>
+	<img id="image2"/>
+</body>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAOJ_dBd5UOR29NAmOjRiK8D0SMC6nPGE8" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</html>
