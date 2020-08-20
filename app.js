@@ -90,6 +90,10 @@ app.get("/", (req,  res) => {
 	res.send("check if logged in, shows either login page or home page");
 });
 
+app.get("/mapjs", (req, res) => {
+	res.redirect(302, "https://maps.googleapis.com/maps/api/js?key=" + APIKEY + "&callback=getPic");
+});
+
 app.get("/classify", (req, res) => {
 	res.sendFile(__dirname + "/res/classify.html");
 });
