@@ -108,3 +108,6 @@ config.json
 
 # xd
 .xd
+
+# config
+config.json
