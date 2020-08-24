@@ -3,8 +3,10 @@
 const {Client, Status} = require("@googlemaps/google-maps-services-js");
 const fetch = require("node-fetch");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 const express = require("express");
 const mysql = require("mysql");
+const crypto = require("crypto");
 const config = JSON.parse(require("fs").readFileSync(__dirname + "/config.json"));
 
 const APIKEY = config.google.apikey;
@@ -12,8 +14,9 @@ const APIKEY = config.google.apikey;
 const client = new Client({});
 const app = express();
 
-app.use(bodyParser.json())
-app.use(express.static("res"))
+app.use(bodyParser.json());
+app.use(express.static("res"));
+app.use(cookieParser());
 
 var db = mysql.createConnection({
 	host: config.mysql.host,
@@ -52,11 +55,44 @@ db.connect((err) => {
 
 	db.query(`CREATE TABLE IF NOT EXISTS gm_users(
 		uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-		username VARCHAR(32),
+		username VARCHAR(32) UNIQUE,
 		password TEXT,
-		admin INT NOT NULL DEFAULT 0
-	)`)
+		admin BOOL NOT NULL DEFAULT 0
+	)`);
+
+	// create default admin account with password "password"
+	// PLEASE CHANGE THE PASSWORD BEFORE USING
+	db.query(`INSERT INTO gm_users(uid, username, password, admin) VALUES(0, "admin", "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8", 1)`, function(){});
 });
+
+var activeTokens = {};
+
+function needsAuth(req, res, next){
+	var token = req.cookies["token"];
+	req.user = activeTokens[token];
+
+	if (req.user)
+		next();
+	else
+		res.redirect("/");
+}
+
+function needsAdmin(req, res, next){
+	var token = req.cookies["token"];
+	req.user = activeTokens[token];
+
+	if (req.user){
+		db.query("SELECT * FROM gm_users WHERE uid = ?", [req.user], function(err, r, fields){
+			if (r && r.length > 0 && r[0].admin == 1)
+				next();
+			else
+				res.redirect("/")
+		});
+	} else {
+		res.redirect("/");
+	}
+}
+
 function GetRoadside(lat, long, cb){
 	client.nearestRoads({
 		params: {
@@ -86,69 +122,134 @@ function SnapToRoads(path, cb){
 	});
 }
 
+function hashPass(password){
+	var sha256 = crypto.createHash("sha256");
+	return sha256.update(password).digest("hex");
+}
+
+function createToken(){
+	return crypto.randomBytes(32).toString("hex");
+}
+
 app.get("/", (req,  res) => {
-	res.send("check if logged in, shows either login page or home page");
+	var token = req.cookies["token"];
+
+	if (activeTokens[token])
+		res.sendFile(__dirname + "/res/home.html");
+	else
+		res.sendFile(__dirname + "/res/login.html");
 });
 
-app.get("/mapjs", (req, res) => {
+app.get("/mapjs", needsAuth, (req, res) => {
 	res.redirect(302, "https://maps.googleapis.com/maps/api/js?key=" + APIKEY + "&callback=getPic");
 });
 
-app.get("/classify", (req, res) => {
+app.get("/classify", needsAuth, (req, res) => {
 	res.sendFile(__dirname + "/res/classify.html");
 });
 
-app.get("/me", (req, res) => {
+app.get("/me", needsAuth, (req, res) => {
 	res.sendFile(__dirname + "/res/me.html");
 });
 
-app.get("/edit", (req, res) => {
+app.get("/edit", needsAuth, (req, res) => {
 	res.sendFile(__dirname + "/res/edit.html");
 });
 
-app.get("/help", (req, res) => {
+app.get("/help", needsAuth, (req, res) => {
 	res.sendFile(__dirname + "/res/help.html");
 });
 
-app.post("/nearestRoad", (req, res) => {
+app.get("/password", needsAuth, (req, res) => {
+	res.sendFile(__dirname + "/res/password.html");
+});
+
+app.get("/newUser", needsAdmin, (req, res) => {
+	res.sendFile(__dirname + "/res/createuser.html");
+});
+
+app.post("/login", (req, res) => {
+	var user = req.body.user;
+	var password = hashPass(req.body.password);
+
+	db.query("SELECT * FROM gm_users WHERE username = ? AND password = ?", [user, password], function(err, r, fields){
+		if (r && r.length > 0){
+			var token = createToken();
+			activeTokens[token] = r[0].uid;
+
+			res.cookie("token", token);
+
+			res.send("ok")
+		} else {
+			res.send("Invalid username or password");
+		}
+	});
+});
+
+app.post("/createUser", needsAdmin, (req, res) => {
+	var user = req.body.user;
+	var password = hashPass(req.body.password);
+	var admin = req.body.admin;
+
+	db.query("INSERT INTO gm_users(username, password, admin) VALUES(?, ?, ?)", [user, password, admin], function(err, r, fields){
+		if (err)
+			res.send(err);
+		else
+			res.send("ok");
+	});
+});
+
+app.get("/logout", (req, res) => {
+	res.cookie("token", "");
+	res.redirect("/")
+});
+
+app.post("/changePassword", needsAuth, (req, res) => {
+	var password = hashPass(req.body.password);
+
+	db.query("UPDATE gm_users(password) VALUES(?) WHERE uid = ?", [password, req.user], function(){
+		res.send("changed");
+	});
+});
+
+app.post("/nearestRoad", needsAuth, (req, res) => {
 	GetRoadside(req.body.path, data => {
 		res.send(data);
 	});
 });
 
-app.post("/snapToRoads", (req, res) => {
-	console.log(req.body);
+app.post("/snapToRoads", needsAuth, (req, res) => {
 	SnapToRoads(req.body.path, data => {
 		res.send(data);
 	})
 });
 
-app.get("/generateImage", (req, res) => {
+app.get("/generateImage", needsAuth, (req, res) => {
 	res.send([
 		"https://maps.googleapis.com/maps/api/streetview?pano=" + req.query.pano + "&size=1280x720&heading=" + req.query.heading + "&fov=" + req.query.fov + "&pitch=" + req.query.pitch + "&key=" + APIKEY,
 		"https://maps.googleapis.com/maps/api/streetview?pano=" + req.query.pano + "&size=1280x720&heading=" + req.query.heading + "&fov=" + req.query.fov + "&pitch=" + req.query.pitch + "&key=" + APIKEY
 	]);
 });
 
-app.get("/inputCoords", (req, res) => {
+app.get("/inputCoords", needsAdmin, (req, res) => {
 	res.sendFile(__dirname + "/res/coords.html")
 });
 
-app.get("/getClassified", (req, res) => {
-	var userid = 0;
+app.get("/getClassified", needsAuth, (req, res) => {
+	var userid = req.user;
 
 	db.query("SELECT * FROM gm_classified WHERE userid = ?", [userid], function(err, r, fields){
 		res.send(JSON.stringify(r));
 	});
 });
 
-app.get("/getClassified/:uid", (req, res) => {
+app.get("/getClassified/:uid", needsAuth, (req, res) => {
 	db.query("SELECT * FROM gm_classified WHERE uid = ?", [req.params.uid], function(err, r, fields){
 		res.send(JSON.stringify(r[0]));
 	});
 });
 
-app.post("/saveCoords", (req, res) => {
+app.post("/saveCoords", needsAdmin, (req, res) => {
 	var ids = req.body.data;
 
 	for (var i=0; i < ids.length; i++){
@@ -156,8 +257,8 @@ app.post("/saveCoords", (req, res) => {
 	}
 });
 
-app.post("/saveImageData", (req, res) => {
-	var userid = 0;
+app.post("/saveImageData", needsAuth, (req, res) => {
+	var userid = req.user;
 
 	var panoid = req.body.panoid;
 	var tags = JSON.stringify(req.body.tags);
@@ -175,8 +276,8 @@ app.post("/saveImageData", (req, res) => {
 	res.send("{result: \"ok\"}");
 });
 
-app.post("/editImageData", (req, res) => {
-	var userid = 0;
+app.post("/editImageData", needsAuth, (req, res) => {
+	var userid = req.user;
 
 	var uid = req.body.uid;
 	var tags = JSON.stringify(req.body.tags);
@@ -193,8 +294,8 @@ app.post("/editImageData", (req, res) => {
 	res.send("ok");
 });
 
-app.get("/getImage", (req, res) => {
-	var userid = 0;
+app.get("/getImage", needsAuth, (req, res) => {
+	var userid = req.user;
 
 	db.query(`
 		SELECT panoid, lotvscore FROM gm_panos
@@ -211,11 +312,15 @@ app.get("/getImage", (req, res) => {
 	});
 });
 
-app.get("/loadTags", (req, res) => {
-	var userid = 0;
-
+app.get("/loadTags", needsAuth, (req, res) => {
 	db.query("SELECT * FROM gm_tags ORDER BY count DESC", function(err, r, fields){
 		res.send(JSON.stringify(r));
+	});
+});
+
+app.get("/getUser", needsAuth, (req, res) => {
+	db.query("SELECT * FROM gm_users WHERE uid = ?", req.user, function(err, r, fields){
+		res.send(JSON.stringify(r[0]));
 	});
 });
 
