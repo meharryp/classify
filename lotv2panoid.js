@@ -74,7 +74,7 @@ function getPanoid(){
 					var month = new Date(json.date).getMonth();
 
 					if (month >= config.google.startmonth && month <= config.google.endmonth){
-						db.query("INSERT INTO gm_panos VALUES(?, ?)", [json.pano_id, features[currentFeature].properties.Score], function(err, r, fields){});
+						db.query("INSERT INTO gm_panos(panoid, lotvscore, side) VALUES(?, ?, ?)", [json.pano_id, features[currentFeature].properties.Score, features[currentFeature].properties.Side], function(err, r, fields){});
 					}
 				}
 			})
@@ -85,9 +85,11 @@ function getPanoid(){
 }
 
 db.query("DROP TABLE gm_panos", function(){
-	db.query(`CREATE TABLE IF NOT EXISTS gm_panos(
-		panoid VARCHAR(64) PRIMARY KEY,
-		lotvscore VARCHAR(16)
+	db.query(`CREATE TABLE gm_panos(
+		uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+		panoid VARCHAR(64),
+		lotvscore VARCHAR(16),
+		side VARCHAR(8)
 	)`, getPanoid);
 })
 

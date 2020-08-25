@@ -1,11 +1,31 @@
 const defaultTags = [
 	"Mown",
+	"Cuttings visible",
+	"Grassy part of verge",
 	"Hedgerow present",
+	"Trees higher than hedgerow",
+	"Roadside ditch",
+	"Ditch spoil",
 	"Crash barrier",
-	"Junction in foreground",
-	"Pavement present",
+	"Junction",
+	"Pavement",
+	"Grips",
+	"Layby",
+	"Propery entrance",
+	"Erosion present",
 	"LoTV score incorrect"
 ]
+
+const sides = {
+	N: 0,
+	NE: 45,
+	E: 90,
+	SE: 135,
+	S: 180,
+	SW: 225,
+	W: 270,
+	NW: 315
+}
 
 var tags;
 
@@ -85,3 +105,42 @@ function zoomOut(){
 	zoom += 5;
 	updatePreview();
 }
+
+$(document).ready(function(){
+	var select = $("#extraTags");
+	select.append(new Option("Create new tag...", "newtag"));
+	select.change(function(e){
+		var value = $(this).val();
+
+		if (value == "newtag"){
+			value = prompt("Enter the name of the new tag.", "Tag name");
+		}
+
+		if (value != "ignore"){
+			var tag = document.createElement("input");
+			tag.setAttribute("type", "checkbox");
+			tag.setAttribute("id", value);
+			tag.checked = true;
+
+			$("#moreTags").append(value);
+			$("#moreTags").append(tag);
+		}
+
+		$(this).val("ignore");
+	});
+
+	for (var i=0; i < defaultTags.length; i++){
+		var tag = document.createElement("input");
+		tag.setAttribute("type", "checkbox");
+		tag.setAttribute("id", defaultTags[i]);
+
+		var label = document.createElement("label");
+		label.setAttribute("for", defaultTags[i]);
+		label.innerHTML = defaultTags[i];
+
+		$("#defaultTags").append(tag);
+		$("#defaultTags").append(label);
+	}
+
+	loadTags();
+});

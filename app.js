@@ -33,13 +33,15 @@ db.connect((err) => {
 	}
 
 	db.query(`CREATE TABLE IF NOT EXISTS gm_panos(
+		uid INT NOT NULL PRIMARY KEY,
 		panoid VARCHAR(64),
-		lotvscore VARCHAR(16)
+		lotvscore VARCHAR(16),
+		side VARCHAR(8)
 	)`);
 
 	db.query(`CREATE TABLE IF NOT EXISTS gm_classified(
 		uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-		panoid VARCHAR(64) NOT NULL,
+		panouid VARCHAR(64) NOT NULL,
 		heading DOUBLE NOT NULL,
 		pitch DOUBLE NOT NULL,
 		zoom DOUBLE NOT NULL,
@@ -238,13 +240,19 @@ app.get("/inputCoords", needsAdmin, (req, res) => {
 app.get("/getClassified", needsAuth, (req, res) => {
 	var userid = req.user;
 
-	db.query("SELECT * FROM gm_classified WHERE userid = ?", [userid], function(err, r, fields){
+	db.query(`SELECT gm_classified.uid, gm_classified.heading, gm_classified.pitch, gm_classified.zoom, gm_classified.tags, gm_classified.created, gm_panos.panoid
+		FROM gm_classified
+		RIGHT JOIN gm_panos ON gm_classified.panouid = gm_panos.uid
+		WHERE userid = ?`, [userid], function(err, r, fields){
 		res.send(JSON.stringify(r));
 	});
 });
 
 app.get("/getClassified/:uid", needsAuth, (req, res) => {
-	db.query("SELECT * FROM gm_classified WHERE uid = ?", [req.params.uid], function(err, r, fields){
+	db.query(`SELECT gm_classified.uid, gm_classified.heading, gm_classified.pitch, gm_classified.zoom, gm_classified.tags, gm_classified.created, gm_panos.panoid
+		FROM gm_classified
+		RIGHT JOIN gm_panos ON gm_classified.panouid = gm_panos.uid
+		WHERE gm_classified.uid = ?`, [req.params.uid], function(err, r, fields){
 		res.send(JSON.stringify(r[0]));
 	});
 });
@@ -261,13 +269,13 @@ app.post("/saveImageData", needsAuth, (req, res) => {
 	var userid = req.user;
 
 	var panoid = req.body.panoid;
-	var tags = JSON.stringify(req.body.tags);
+	var tags = req.body.tags;
 	var heading = req.body.heading;
 	var pitch = req.body.pitch;
 	var zoom = req.body.zoom;
 
-	db.query("INSERT INTO gm_classified(panoid, heading, pitch, zoom, tags, userid) VALUES(?, ?, ?, ?, ?, ?)",
-		[panoid, heading, pitch, zoom, tags, userid]);
+	db.query("INSERT INTO gm_classified(panouid, heading, pitch, zoom, tags, userid) VALUES(?, ?, ?, ?, ?, ?)",
+		[panoid, heading, pitch, zoom, JSON.stringify(tags), userid]);
 
 	for (var i=0; i < tags.length; i++){
 		db.query("INSERT INTO gm_tags VALUES(?, 1) ON DUPLICATE KEY UPDATE count = count + 1", tags[i]);
@@ -298,10 +306,9 @@ app.get("/getImage", needsAuth, (req, res) => {
 	var userid = req.user;
 
 	db.query(`
-		SELECT panoid, lotvscore FROM gm_panos
-		WHERE panoid
-		NOT IN (SELECT panoid FROM gm_classified WHERE userid = ?)
-		GROUP BY panoid
+		SELECT * FROM gm_panos
+		WHERE uid
+		NOT IN (SELECT panouid FROM gm_classified WHERE userid = 0)
 		ORDER BY RAND() LIMIT 1;`,
 		[userid], function(err, r, fields){
 

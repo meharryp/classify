@@ -14,10 +14,6 @@
 	width: 100;
 }
 
-#tagHolder * {
-	max-width: 460;
-}
-
 .defaultTags {
 	padding: 20px;
 }

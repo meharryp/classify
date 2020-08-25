@@ -4,21 +4,37 @@ function getPic(){
 	$.ajax("/getClassified/" + uid).done(function(data){
 		var res = JSON.parse(data);
 		curPic = res.panoid;
+		curUID = res.uid;
 
-		var view = new google.maps.StreetViewPanorama(
-			document.getElementById("streetDummy"), {
-				pano: curPic
-			}
-		);
+		console.log(res);
 
-		sView = view;
+		if (!sView){
+			var view = new google.maps.StreetViewPanorama(
+				document.getElementById("streetDummy"), {
+					pano: curPic,
+					linksControl: false,
+					eanbleCloseButton: false,
+					addressControl: false,
+					fullscreenControl: false,
+					linksControl: false,
+					showRoadLabel: false,
+					clickToGo: false
+				}
+			);
 
-		sv = new google.maps.StreetViewService();
+			heading = res.heading;
+			pitch = res.pitch;
+			zoom = res.zoom;
 
-		var pov = view.getPhotographerPov();
-		heading = res.heading;
-		pitch = res.pitch;
-		zoom = res.zoom;
+			sView = view;
+			sv = new google.maps.StreetViewService();
+
+			view.addListener("position_changed", function(){
+				updatePreview();
+			});
+		} else {
+			sView.setPano(curPic);
+		}
 
 		// do something to check tags
 		var tags = [];
@@ -57,16 +73,16 @@ function getPic(){
 }
 
 function updatePreview(){
-	var tHeading = heading;
-
-	$.ajax("/generateImage?pano=" + curPic + "&heading=" + tHeading + "&fov=" + zoom + "&pitch=" + pitch)
-	.done(function(data){
-		$("#image1").attr("src", data[0]);
+	sView.setPov({
+		heading: heading,
+		pitch: pitch,
+		zoom: (Math.log(zoom/180) / Math.log(0.5))
 	});
 }
 
 function nextImage(bad){
 	var tags;
+	var pov = sView.getPov();
 
 	if (bad)
 		tags = ["bad"];
@@ -78,9 +94,9 @@ function nextImage(bad){
 		method: "POST",
 		data: JSON.stringify({
 			uid: parseInt(uid),
-			heading: heading,
-			pitch: pitch,
-			zoom: zoom,
+			heading: pov.heading,
+			pitch: pov.pitch,
+			zoom: (180 * Math.pow(0.5, pov.zoom)) + 5,
 			tags: tags
 		}),
 		contentType: "application/json"
@@ -89,38 +105,3 @@ function nextImage(bad){
 		window.location = "/me"
 	});
 }
-
-$(document).ready(function(){
-	var select = $("#extraTags");
-	select.append(new Option("Create new tag...", "newtag"));
-	select.change(function(e){
-		var value = $(this).val();
-
-		if (value == "newtag"){
-			value = prompt("Enter the name of the new tag.", "Tag name");
-		}
-
-		if (value != "ignore"){
-			var tag = document.createElement("input");
-			tag.setAttribute("type", "checkbox");
-			tag.setAttribute("id", value);
-			tag.checked = true;
-
-			$("#moreTags").append(value);
-			$("#moreTags").append(tag);
-		}
-
-		$(this).val("ignore");
-	});
-
-	for (var i=0; i < defaultTags.length; i++){
-		var tag = document.createElement("input");
-		tag.setAttribute("type", "checkbox");
-		tag.setAttribute("id", defaultTags[i]);
-
-		$("#defaultTags").append(defaultTags[i]);
-		$("#defaultTags").append(tag);
-	}
-
-	loadTags();
-});

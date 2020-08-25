@@ -2,29 +2,55 @@
 // first displaying the image to the user
 const defaultOffset = 90;
 
+var sideMode = false;
+var curSide = "";
+
+var curUID = 0;
+
 function getPic(){
 	$.ajax("/getImage").done(function(data){
 		var json = JSON.parse(data)
 		curPic = json.panoid;
+		curUID = json.uid;
 
-		var view = new google.maps.StreetViewPanorama(
-			document.getElementById("streetDummy"), {
-				pano: curPic
-			}
-		);
+		console.log(data);
 
-		sView = view;
+		if (!sView){
+			var view = new google.maps.StreetViewPanorama(
+				document.getElementById("streetDummy"), {
+					pano: curPic,
+					linksControl: false,
+					eanbleCloseButton: false,
+					addressControl: false,
+					fullscreenControl: false,
+					linksControl: false,
+					showRoadLabel: false,
+					clickToGo: false
+				}
+			);
 
-		sv = new google.maps.StreetViewService();
+			view.addListener("position_changed", function(){
+				var pov = view.getPhotographerPov();
+				heading = pov.heading;
+				pitch = pov.pitch;
+				zoom = 120;
 
-		view.addListener("position_changed", function(){
-			var pov = view.getPhotographerPov();
-			heading = pov.heading;
-			pitch = pov.pitch;
-			zoom = 120;
+				updatePreview();
+			});
 
-			updatePreview();
-		});
+			sView = view;
+			sv = new google.maps.StreetViewService();
+		} else {
+			sView.setPano(curPic);
+		}
+
+
+		if (!json.side || json.side === "" || json.side == "Error")
+			sideMode = true;
+		else {
+			curSide = json.side;
+			sideMode = false;
+		}
 
 		$("#lotvscore").html(`LoTV Score: ${json.lotvscore}`)
 	});
@@ -33,27 +59,32 @@ function getPic(){
 function updatePreview(){
 	var tHeading = 0;
 
-	if (side)
-		tHeading = heading + 90;
-	else
-		tHeading = heading - 90;
+	if (side && sideMode)
+		tHeading = heading + defaultOffset;
+	else if (sideMode)
+		tHeading = heading - defaultOffset;
 
-	$.ajax("/generateImage?pano=" + curPic + "&heading=" + tHeading + "&fov=" + zoom + "&pitch=" + pitch)
-	.done(function(data){
-		if (!side)
-			$("#image1").attr("src", data[0]);
+	// attempt to guess and create a better view of the side the verge is on
+	if (!sideMode){
+		var left = (heading - defaultOffset) % 360;
+		var right = (heading + defaultOffset) % 360;
+
+		if (left - sides[curSide] > right - sides[curSide])
+			tHeading = left;
 		else
-			$("#image1").attr("src", data[1]);
+			tHeading = right;
+	}
+
+	sView.setPov({
+		heading: tHeading,
+		pitch: pitch,
+		zoom: 0
 	});
 }
 
 function nextImage(bad){
-	if (side)
-		tHeading = heading + 90;
-	else
-		tHeading = heading - 90;
-
 	var tags;
+	var pov = sView.getPov();
 
 	if (bad)
 		tags = ["bad"];
@@ -64,10 +95,10 @@ function nextImage(bad){
 		url: "/saveImageData",
 		method: "POST",
 		data: JSON.stringify({
-			panoid: curPic,
-			heading: tHeading,
-			pitch: pitch,
-			zoom: zoom,
+			panoid: curUID,
+			heading: pov.heading,
+			pitch: pov.pitch,
+			zoom: (180 * Math.pow(0.5, pov.zoom)) + 5,
 			tags: tags
 		}),
 		dataType: "json",
@@ -90,7 +121,7 @@ function nextImage(bad){
 
 	resetCamera();
 
-	if (!side){
+	if (!side && sideMode){
 		side = true;
 		updatePreview();
 	} else {
@@ -98,38 +129,3 @@ function nextImage(bad){
 		getPic();
 	}
 }
-
-$(document).ready(function(){
-	var select = $("#extraTags");
-	select.append(new Option("Create new tag...", "newtag"));
-	select.change(function(e){
-		var value = $(this).val();
-
-		if (value == "newtag"){
-			value = prompt("Enter the name of the new tag.", "Tag name");
-		}
-
-		if (value != "ignore"){
-			var tag = document.createElement("input");
-			tag.setAttribute("type", "checkbox");
-			tag.setAttribute("id", value);
-			tag.checked = true;
-
-			$("#moreTags").append(value);
-			$("#moreTags").append(tag);
-		}
-
-		$(this).val("ignore");
-	});
-
-	for (var i=0; i < defaultTags.length; i++){
-		var tag = document.createElement("input");
-		tag.setAttribute("type", "checkbox");
-		tag.setAttribute("id", defaultTags[i]);
-
-		$("#defaultTags").append(defaultTags[i]);
-		$("#defaultTags").append(tag);
-	}
-
-	loadTags();
-});
