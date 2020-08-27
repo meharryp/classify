@@ -257,6 +257,21 @@ app.get("/getClassified/:uid", needsAuth, (req, res) => {
 	});
 });
 
+app.get("/getRecent", needsAuth, (req, res) => {
+	db.query(`SELECT gm_classified.uid, gm_classified.heading, gm_classified.pitch, gm_classified.zoom, gm_classified.tags, gm_classified.created, gm_panos.panoid
+		FROM gm_classified
+		INNER JOIN gm_panos ON gm_classified.panouid = gm_panos.uid
+		ORDER BY gm_classified.created DESC`, function(err, r, fields){
+		res.send(JSON.stringify(r));
+	});
+});
+
+app.get("/getStats", needsAuth, (req, res) => {
+	db.query("SELECT COUNT(uid) AS classified FROM gm_classified", function(err, r, fields){
+		res.send(JSON.stringify(r[0]));
+	});
+});
+
 app.post("/saveCoords", needsAdmin, (req, res) => {
 	var ids = req.body.data;
 

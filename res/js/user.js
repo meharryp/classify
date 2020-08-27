@@ -2,6 +2,7 @@ $(document).ready(function(){
 	$.ajax("/getUser").done(function(data){
 		var res = JSON.parse(data);
 		$("#username").html(res.username);
+		$("#homeWelcome").html("Hi " + res.username + ", what would you like to do?")
 
 		if (res.admin === 1){
 			$("#navbarNav .navbar-nav").append(`

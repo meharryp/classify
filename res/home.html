@@ -2,13 +2,14 @@
 <head>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<title>GMaps Testing</title>
-	<link rel="stylesheet" href="css/style.css">
+	<script src="js/home.js"></script>
 	<script src="js/user.js"></script>
+	<link rel="stylesheet" href="css/style.css">
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 </head>
 <body>
 	<nav class="navbar navbar-expand-lg navbar-light bg-light">
-		<a class="navbar-brand" href="#">Classify</a>
+		<a class="navbar-brand" href="/">Classify</a>
 		<div class="collapse navbar-collapse" id="navbarNav">
 			<ul class="navbar-nav">
 				<li class="nav-item">
@@ -31,31 +32,22 @@
 	</nav>
 
 	<div class="d-flex justify-content-center">
-		<div class="container flex-column">
+		<div class="container flex-fill">
 			<div class="d-flex flex-column">
-				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla quis elit nulla. Donec id magna a lectus cursus blandit elementum in tellus. Aliquam non sollicitudin arcu, eu fermentum metus. Duis in tortor et mauris condimentum cursus et quis lorem. Aenean sed felis quis odio tempus vestibulum eget quis dolor. Donec ornare pellentesque feugiat. Mauris tristique mauris ac est hendrerit congue. Donec ut leo sed augue tempus egestas nec et dui.
-
-				<div class="d-flex justify-content-center">
-					<img src="img/example_bush.jpg" style="width: 300; display:inline-block"/>
+				<h3 id="homeStats">2,000 images have been classified so far. There are still 1,000 images left to classify!</h3><br>
+				<h3 id="homeWelcome">Hi username, what would you like to do?</h3>
+				<div class="d-flex">
+					<a href="/help" class="btn btn-primary">Tell me how to classify images</a>
+					<a href="/classify" class="btn btn-primary">Start classifying images</a>
 				</div>
-
-				Vivamus faucibus augue ut neque tristique lacinia. Suspendisse imperdiet, justo eu auctor efficitur, quam ipsum lobortis libero, vel rhoncus odio nisi non augue. Vestibulum odio est, pellentesque quis orci ut, fermentum maximus est. Vestibulum tellus tellus, laoreet maximus orci id, rutrum vehicula nisi. Vivamus et dui pellentesque mi elementum pretium. Suspendisse sed risus nunc. Suspendisse quis purus auctor, ultricies ex porttitor, tempor ligula. Vestibulum eu elementum turpis, non molestie nisi. Duis pharetra, neque sed scelerisque dictum, ligula odio pulvinar est, non auctor felis erat id neque. Sed ultrices molestie ante nec euismod. Suspendisse scelerisque eget ipsum quis gravida. Pellentesque urna ipsum, congue id lorem et, gravida sodales libero. Donec ligula diam, interdum ac finibus eget, tincidunt quis ex. Vestibulum hendrerit imperdiet justo ut posuere. Fusce ullamcorper lectus sit amet eros rhoncus, eget consequat nisi sodales.
-
-				<div class="d-flex justify-content-center">
-					<img src="img/example_bush.jpg" style="width: 300; display:inline-block"/>
-				</div>
-
-				Duis venenatis aliquam malesuada. Vestibulum imperdiet dignissim euismod. Aenean non interdum tellus. Aliquam a dolor sit amet nisi bibendum interdum non ut lectus. Sed consequat molestie mauris, nec suscipit turpis pharetra in. Sed sit amet nulla ac risus maximus varius id et ex. Suspendisse ut volutpat ipsum. Duis ultrices dui nec ex sodales interdum. Integer non tellus diam. Cras ornare nunc eu magna congue, sagittis maximus lacus venenatis. Proin laoreet leo eu arcu pellentesque, rhoncus pharetra eros bibendum.
-				</p>
-				<button type="button" class="btn btn-primary" onclick="editCurrent()">Next page</button>
-
 			</div>
 		</div>
 
-		<div class="container flex-fill">
-			<div class="d-flex justify-content-center">
-				<img src="img/example.png">
-			</div>
+		<div class="container flex-fill" style="overflow: scroll; height: calc(100vh - 70px)">
+			<table class="table flex-fill">
+				<thead><tr><th>Recently classified</th></tr></thead>
+				<tbody id="classifytable"></tbody>
+			</table>
 		</div>
 	</div>
 </body>
